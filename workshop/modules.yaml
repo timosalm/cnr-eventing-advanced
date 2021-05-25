@@ -1,0 +1,13 @@
+modules:
+    workshop-overview:
+        name: Workshop Overview
+        exit_sign: What is CNR?
+    exercises/01-knative-eventing:
+        name: Knative Eventing
+        exit_sign: Try Knative Eventing
+    exercises/02-try-knative-eventing:
+        name: Try Knative Eventing
+        exit_sign: Workshop Summary
+    workshop-summary:
+        name: Workshop Summary
+        exit_sign: Finish Workshop

@@ -1,0 +1,8 @@
+name: Markdown Sample
+
+modules:
+    activate:
+    - workshop-overview
+    - exercises/01-knative-eventing
+    - exercises/02-try-knative-eventing
+    - workshop-summary
