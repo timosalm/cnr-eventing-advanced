@@ -17,10 +17,10 @@ spec:
 #    image: quay.io/eduk8s/base-environment:master
 #    image: olrich/cnr-workshop:0.1
     image: ghcr.io/clue2solve/knative-workshop-eduk8s:latest
-    files: github.com/tanzu-developer-experience/cnr-eventing-advanced
+    files: github.com/tanzu-developer-experience/cnr-eventing-advanced?ref=adv-eventing
   session:
     namespaces:
-      budget: medium
+      budget: xxx-large
       limits:
         min:
           cpu: 25m

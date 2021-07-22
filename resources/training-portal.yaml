@@ -2,7 +2,6 @@ apiVersion: training.eduk8s.io/v1alpha1
 kind: TrainingPortal
 metadata:
   name: cnr-eventing-advanced
-spec:
   portal:
     registration:
       type: anonymous
