@@ -99,7 +99,8 @@ kubectl get sequence example-sequence
 ```
 What’s left for this example is to add a *PingSource*.
 ```execute
-kn source ping create ping-sequence --data '{"message": "Hello world!"}' --sink $(kubectl get sequence example-sequence -o json  | jq --raw-output '.status.address.url')
+SEQUENCE_URL="$(kubectl get sequence example-sequence -o json | jq --raw-output '.status.address.url')"
+kn source ping create ping-sequence --data '{"message": "Hello world!"}' --sink $SEQUENCE_URL
 ```
 Now, if you go to the Sockeye application, you can see the *CloudEvents* as those arrive after passing through the *Sequence*.
 ```
@@ -265,12 +266,15 @@ EOF
 ```execute
 kn service create first-branch-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by branch 0"
 kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
-kn trigger create parallel-example --filter type=com.example.parallel --sink $(kubectl get parallel example-parallel -o json  | jq --raw-output '.status.address.url')
+
+PARALLEL_URL="$(kubectl get parallel example-parallel -o json | jq --raw-output '.status.address.url')"
+kn trigger create parallel-example --filter type=com.example.parallel --sink $PARALLEL_URL
 ```
 You now have a *Trigger* to send matching *CloudEvents* to the *Parallel*’s URI. The *Parallel* sends that *CloudEvent* on to the *Service* I created, which appends `FIRST BRANCH` to whatever *CloudEvent* message passes it by. Then the *CloudEvent* should pop up in in the Sockeye application.
 To try this out, execute the following command.
 ```execute
-curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $(kubectl get broker default -o json  | jq --raw-output ".status.address.url")
+BROKER_URL="$(kn broker describe default -o url)"
+curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
 ```
 Let's now add a second subscriber that also replies to the Sockeye application.
 ```execute
@@ -308,7 +312,8 @@ kn service create second-branch-service --image gcr.io/knative-releases/knative.
 ```
 To try this out, re-execute the following command.
 ```execute
-curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $(kubectl get broker default -o json  | jq --raw-output ".status.address.url")
+BROKER_URL="$(kn broker describe default -o url)"
+curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
 ```
 The *Parallel* made two copies of the *CloudEvent* and sent those to each of the branches (fan-out). Then those branches sent their reply to the same instance of the Sockeye application (fan-in).
 

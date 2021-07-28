@@ -23,7 +23,7 @@ command: kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
 
 Now you are able to create the *PingSource* and specify the sink via the kn CLI.
 ```terminal:execute
-command: kn source ping create ping-player --sink $(kn service list sockeye -o json  | jq --raw-output '.items[].status.url')
+command: kn source ping create ping-player --sink $(kn service describe sockeye -o url)
 ```
 If you have a look at the details of the created *Source* ...
 ```terminal:execute
