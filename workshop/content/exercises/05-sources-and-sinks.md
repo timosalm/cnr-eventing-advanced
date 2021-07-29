@@ -94,7 +94,9 @@ Which is better? URIs are simpler to start with and allow you to target endpoint
 
 This is most useful when things go awry. Let’s demonstrate by creating some unexpected havoc as uncovered in this listing.
 ```terminal:execute
-command: kn service delete sockeye && kn source ping describe ping-player
+command: |-
+  kn service delete sockeye
+  kn source ping describe ping-player
 clear: true
 ```
 The `Ready` Condition is a top-level rollup of other Conditions. The more diagnostic Condition is that `SinkProvided` is `!!` (not OK). The `NotFound` reason explains why. This information is surfaced because *Knative Eventing* can go and see if the nominated Ref actually exists. That’s not something it can do with URI. 

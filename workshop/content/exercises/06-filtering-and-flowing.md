@@ -17,7 +17,8 @@ A *Broker* in Knative land serves two major purposes:
 *Triggers* include filters. Let's create a *Trigger* together with a *Broker*.
 ```terminal:execute
 command: |-
-  kn broker create default && kn trigger create example-trigger --filter type=dev.knative.example.com --sink http://example.com/
+  kn broker create default
+  kn trigger create example-trigger --filter type=dev.knative.example.com --sink http://example.com/
   kn trigger describe example-trigger
 clear: true
 ```
