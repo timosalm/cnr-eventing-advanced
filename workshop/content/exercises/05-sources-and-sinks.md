@@ -7,6 +7,7 @@ Knative’s design is that any Kubernetes record having the two fields `Sink` an
 Let’s first have a look at the Sources that are installed by default.
 ```terminal:execute
 command: kn source list-types
+clear: true
 ```
 You should see the *ApiServerSource*, *ContainerSource*, and *PingSource*. Additionally there is a *SinkBinding*, which we’ll discuss later.
 
@@ -15,25 +16,31 @@ You should see the *ApiServerSource*, *ContainerSource*, and *PingSource*. Addit
 For working with *ApiServerSource* and *PingSource*, kn provides some convenient subcommands. First you have to deploy a broker and a sink.
 ```terminal:execute
 command: kn broker create default
+clear: true
 ```
 Instead of the CloudEvents player application, we will use Sockeye which reveals a slightly lower-level view.
 ```terminal:execute
 command: kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
+clear: true
 ```
 
 Now you are able to create the *PingSource* and specify the sink via the kn CLI.
 ```terminal:execute
 command: kn source ping create ping-player --sink $(kn service describe sockeye -o url)
+clear: true
 ```
 If you have a look at the details of the created *Source* ...
 ```terminal:execute
 command: kn source ping describe ping-player
+clear: true
 ```
 ... you can see the `Schedule` with the rule `* * * * *` that is satisfied every minute.
 As you would expect, there is also the HTTP(S) URI to which *PingSource* is meant to send the *CloudEvent* and as always, some `Conditions`.
 *Data* is the actual JSON sent onwards to the *Sink*. Because we didn't specify any data at the creation of the *PingSource*, let's do this now.
-```execute
-kn source ping update ping-player --data '{"message": "Hello world!"}'
+```terminal:execute
+command: |-
+  kn source ping update ping-player --data '{"message": "Hello world!"}'
+clear: true
 ```
 The kubectl/YAML counter-part for our source looks like this:
 ```
@@ -61,6 +68,7 @@ Truthfully, the author of the book "Knative in Action" doesn’t think you shoul
 In previous examples so far we’ve positioned the `Sink` as being a URI. It turns out that this is only one way to express “send my *CloudEvents* here.” The other is to use a "Ref" — a reference to another Kubernetes record.
 ```terminal:execute
 command: kn source ping update ping-player --sink ksvc:sockeye
+clear: true
 ```
 The kubectl/YAML counter-part for our source looks like this:
 ```
@@ -87,6 +95,7 @@ Which is better? URIs are simpler to start with and allow you to target endpoint
 This is most useful when things go awry. Let’s demonstrate by creating some unexpected havoc as uncovered in this listing.
 ```terminal:execute
 command: kn service delete sockeye && kn source ping describe ping-player
+clear: true
 ```
 The `Ready` Condition is a top-level rollup of other Conditions. The more diagnostic Condition is that `SinkProvided` is `!!` (not OK). The `NotFound` reason explains why. This information is surfaced because *Knative Eventing* can go and see if the nominated Ref actually exists. That’s not something it can do with URI. 
 
@@ -119,7 +128,10 @@ In addition to the first-party *Sources* that enable you to kick the Eventing ti
 
 To clean up the environment for the next section run:
 ```terminal:execute
-command: kn broker delete default && kn source ping delete ping-player && clear
+command: |-
+  kn broker delete default
+  kn source ping delete ping-player
+clear: true
 ```
 
 

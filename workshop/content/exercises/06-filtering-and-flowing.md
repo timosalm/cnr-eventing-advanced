@@ -15,9 +15,11 @@ A *Broker* in Knative land serves two major purposes:
 
 ## Filters
 *Triggers* include filters. Let's create a *Trigger* together with a *Broker*.
-```execute
-kn broker create default && kn trigger create example-trigger --filter type=dev.knative.example.com --sink http://example.com/
-kn trigger describe example-trigger
+```terminal:execute
+command: |-
+  kn broker create default && kn trigger create example-trigger --filter type=dev.knative.example.com --sink http://example.com/
+  kn trigger describe example-trigger
+clear: true
 ```
 As you can see we added the following filter to *Trigger*: `type=dev.knative.example.com`. This says "let through any *CloudEvent* with type of dev.knative.example.com"
 
@@ -57,30 +59,33 @@ Let's now build a simple *Sequence* to demonstrate three main points: how *Cloud
 Instead of the CloudEvents player application, we will use Sockeye which reveals a slightly lower-level view.
 ```terminal:execute
 command: kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
+clear: true
 ```
 The next step is the creation of the Sequence.
-```execute
-kubectl apply -f - << EOF
-apiVersion: flows.knative.dev/v1beta1
-kind: Sequence
-metadata:
-  name: example-sequence
-spec:
-  steps:
-    - ref:
-        apiVersion: serving.knative.dev/v1
+```terminal:execute
+command: |-
+  kubectl apply -f - << EOF
+  apiVersion: flows.knative.dev/v1beta1
+  kind: Sequence
+  metadata:
+    name: example-sequence
+  spec:
+    steps:
+      - ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: first-sequence-service
+      - ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: second-sequence-service
+    reply:
+      ref:
         kind: Service
-        name: first-sequence-service
-    - ref:
         apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: second-sequence-service
-  reply:
-    ref:
-      kind: Service
-      apiVersion: serving.knative.dev/v1
-      name: sockeye  
-EOF
+        name: sockeye  
+  EOF
+clear: true
 ``` 
 The `spec.steps` block is the only compulsory part of a *Sequence* definition. It’s the truly sequential bit of *Sequences*, representing a list of destinations to which *Knative Eventing* will send *CloudEvents*, using YAML’s array syntax. Order is meaningful: *Knative Eventing* will read it from top to bottom.
 `ref` is the same type of record used for sinks. You can either put a URI here or manually fill out the identifying Kubernetes fields (apiVersion, kind, and name).
@@ -89,18 +94,23 @@ The `spec.reply` section is also a Ref, but only one Ref is allowed here. Unlike
 If you run ...
 ```terminal:execute
 command: kubectl get sequence example-sequence
+clear: true
 ``` 
 ... you can see that the *Sequence* is not ready, because `SubscriptionsNotReady`. The *Subscriptions* in this case are the two *Services*: first-sequence-service and second-sequence-service.
 You will create these now, using a simple example system provided by *Knative Eventing*.
-```execute
-kn service create first-sequence-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by 0"
-kn service create second-sequence-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by 1"
-kubectl get sequence example-sequence
+```terminal:execute
+command: |-
+  kn service create first-sequence-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by 0"
+  kn service create second-sequence-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by 1"
+  kubectl get sequence example-sequence
+clear: true
 ```
 What’s left for this example is to add a *PingSource*.
-```execute
-SEQUENCE_URL="$(kubectl get sequence example-sequence -o json | jq --raw-output '.status.address.url')"
-kn source ping create ping-sequence --data '{"message": "Hello world!"}' --sink $SEQUENCE_URL
+```terminal:execute
+command: |-
+  SEQUENCE_URL="$(kubectl get sequence example-sequence -o json | jq --raw-output '.status.address.url')"
+  kn source ping create ping-sequence --data '{"message": "Hello world!"}' --sink $SEQUENCE_URL
+clear: true
 ```
 Now, if you go to the Sockeye application, you can see the *CloudEvents* as those arrive after passing through the *Sequence*.
 ```
@@ -113,7 +123,13 @@ One note, you don’t need *Sources* to drive a *Sequence*. The *Sequence* satis
 
 To clean up the environment run:
 ```terminal:execute
-command: kn service delete first-sequence-service && kn service delete second-sequence-service && kn service delete sockeye && kn source ping delete ping-sequence && kubectl delete sequence example-sequence && clear
+command: |-
+  kn service delete first-sequence-service
+  kn service delete second-sequence-service
+  kn service delete sockeye
+  kn source ping delete ping-sequence
+  kubectl delete sequence example-sequence
+clear: true
 ```
 
 ### The anatomy of *Sequences* 
@@ -243,77 +259,89 @@ But realistically, the filter and the subscriber are both fully-fledged processe
 When should you use a filter on *Parallel* branches? The view of the author of "Knative in Action" is that you shouldn’t, with one exception. If your subscriber is an expensive or limited resource, you will want to shed as much unwanted demand before you reach it. For example, I might be running a system where I want to send some small fraction of *CloudEvents* to an in-memory analytics store for further analysis. Rather than inserting everything coming off the wire, I would prefer to shed load before reaching the database. In this scenario, the filter is a useful ally.
 
 The simplest thing you can do with a Parallel is to pretend it’s a Sequence.
-```execute
-kubectl apply -f - << EOF
-apiVersion: flows.knative.dev/v1beta1
-kind: Parallel
-metadata:
-  name: example-parallel
-spec:
-  branches:
-  - subscriber:
-      ref:
-        apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: first-branch-service
-    reply:
-      ref:
-        kind: Service
-        apiVersion: serving.knative.dev/v1
-        name: sockeye
-EOF
+```terminal:execute
+command: |-
+  kubectl apply -f - << EOF
+  apiVersion: flows.knative.dev/v1beta1
+  kind: Parallel
+  metadata:
+    name: example-parallel
+  spec:
+    branches:
+    - subscriber:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: first-branch-service
+      reply:
+        ref:
+          kind: Service
+          apiVersion: serving.knative.dev/v1
+          name: sockeye
+  EOF
+clear: true
 ```
-```execute
-kn service create first-branch-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by branch 0"
-kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
+```terminal:execute
+command: |-
+  kn service create first-branch-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by branch 0"
+  kn service create sockeye --image docker.io/n3wscott/sockeye:v0.5.0
 
-PARALLEL_URL="$(kubectl get parallel example-parallel -o json | jq --raw-output '.status.address.url')"
-kn trigger create parallel-example --filter type=com.example.parallel --sink $PARALLEL_URL
+  PARALLEL_URL="$(kubectl get parallel example-parallel -o json | jq --raw-output '.status.address.url')"
+  kn trigger create parallel-example --filter type=com.example.parallel --sink $PARALLEL_URL
+clear: true
 ```
 You now have a *Trigger* to send matching *CloudEvents* to the *Parallel*’s URI. The *Parallel* sends that *CloudEvent* on to the *Service* I created, which appends `FIRST BRANCH` to whatever *CloudEvent* message passes it by. Then the *CloudEvent* should pop up in in the Sockeye application.
 To try this out, execute the following command.
-```execute
-BROKER_URL="$(kn broker describe default -o url)"
-curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
+```terminal:execute
+command: |-
+  BROKER_URL="$(kn broker describe default -o url)"
+  curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
+clear: true
 ```
 Let's now add a second subscriber that also replies to the Sockeye application.
-```execute
-kubectl apply -f - << EOF
-apiVersion: flows.knative.dev/v1beta1
-kind: Parallel
-metadata:
-  name: example-parallel
-spec:
-  branches:
-  - subscriber:
-      ref:
-        apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: first-branch-service
-    reply:
-      ref:
-        kind: Service
-        apiVersion: serving.knative.dev/v1
-        name: sockeye
-  - subscriber:
-      ref:
-        apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: second-branch-service
-    reply:
-      ref:
-        kind: Service
-        apiVersion: serving.knative.dev/v1
-        name: sockeye
-EOF
+```terminal:execute
+command: |-
+  kubectl apply -f - << EOF
+  apiVersion: flows.knative.dev/v1beta1
+  kind: Parallel
+  metadata:
+    name: example-parallel
+  spec:
+    branches:
+    - subscriber:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: first-branch-service
+      reply:
+        ref:
+          kind: Service
+          apiVersion: serving.knative.dev/v1
+          name: sockeye
+    - subscriber:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: second-branch-service
+      reply:
+        ref:
+          kind: Service
+          apiVersion: serving.knative.dev/v1
+          name: sockeye
+  EOF
+clear: true
 ```
-```execute
-kn service create second-branch-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by branch 1"
+```terminal:execute
+command: |-
+  kn service create second-branch-service --image gcr.io/knative-releases/knative.dev/eventing-contrib/cmd/appender --env MESSAGE=" - Handled by branch 1"
+clear: true
 ```
 To try this out, re-execute the following command.
-```execute
-BROKER_URL="$(kn broker describe default -o url)"
-curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
+```terminal:execute
+command: |-
+  BROKER_URL="$(kn broker describe default -o url)"
+  curl -XPOST -H 'Ce-Id: $(uuidgen)' -H 'Ce-Specversion: 1.0' -H 'Ce-Type: com.example.parallel' -H 'Ce-Source: example/parallel' -H "Content-type: application/json" -d '{"message": "Hello world!"}' $BROKER_URL
+clear: true
 ```
 The *Parallel* made two copies of the *CloudEvent* and sent those to each of the branches (fan-out). Then those branches sent their reply to the same instance of the Sockeye application (fan-in).
 
@@ -324,37 +352,45 @@ You might now be wondering whether you will need to laboriously provide a reply 
 2. You can provide a single top-level reply for the whole *Parallel*. This acts as a default for every branch. You can override on any branch by providing a reply specific to that branch, but otherwise, anything coming out is sent on to the top-level reply. 
 
 That means we can rewrite the YAML to be slightly shorter.
-```execute
-kubectl apply -f - << EOF
-apiVersion: flows.knative.dev/v1beta1
-kind: Parallel
-metadata:
-  name: example-parallel
-spec:
-  reply:
-      ref:
-        kind: Service
-        apiVersion: serving.knative.dev/v1
-        name: sockeye
-  branches:
-  - subscriber:
-      ref:
-        apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: first-branch-service
-  - subscriber:
-      ref:
-        apiVersion: serving.knative.dev/v1
-        kind: Service
-        name: second-branch-service
-EOF
+```terminal:execute
+command: |-
+  kubectl apply -f - << EOF
+  apiVersion: flows.knative.dev/v1beta1
+  kind: Parallel
+  metadata:
+    name: example-parallel
+  spec:
+    reply:
+        ref:
+          kind: Service
+          apiVersion: serving.knative.dev/v1
+          name: sockeye
+    branches:
+    - subscriber:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: first-branch-service
+    - subscriber:
+        ref:
+          apiVersion: serving.knative.dev/v1
+          kind: Service
+          name: second-branch-service
+  EOF
+clear: true
 ```
 
 As with *Sequence*, it’s possible to set the `channelTemplate` field on a *Parallel* at the top level. 
 
 To clean up the environment run:
-```execute
-kn service delete first-branch-service && kn service delete second-branch-service && kubectl delete parallel example-parallel && kn trigger delete parallel-example && kn broker delete default && clear
+```terminal:execute
+command: |-
+  kn service delete first-branch-service
+  kn service delete second-branch-service
+  kubectl delete parallel example-parallel
+  kn trigger delete parallel-example
+  kn broker delete default
+clear: true
 ```
 
 ## Dealing with failures

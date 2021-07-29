@@ -78,6 +78,7 @@ ce-time: 2020-04-10T01:00:05+00:00
 Let's first check the current state using the kn CLI.
 ```terminal:execute
 command: kn trigger list && kn source list && kn broker list
+clear: true
 ```
 Under the hood, these commands are groping around for *Trigger*, *Source*, and *Broker* records in Kubernetes. You haven’t done anything yet, so there are none.
 
@@ -88,15 +89,18 @@ A *Subscriber* here is anything that *Knative Eventing* knows how to send stuff 
 Let's start with the creation of a *Broker* ...
 ```terminal:execute
 command: kn broker create default
+clear: true
 ```
 ... and continue with a *Subscriber*. The simplest thing to put here is a basic web app that can receive *CloudEvents* and perhaps help you to inspect those. 
 ```terminal:execute
 command: kn service create cloudevents-player --image ruromero/cloudevents-player:latest --env BROKER_URL=http://default
+clear: true
 ```
 After the deployment of the *Service* there should be a URL to access the application in the logs. If you open the URL, you should see a form with fields for all the required attributes we talked about in the previous section to send an event to the *Broker*.
 To also consume the events from the broker with our application and view them in the blank area on the right, we have to create a *Trigger*.
 ```terminal:execute
 command: kn trigger create cloudevents-player --sink cloudevents-player
+clear: true
 ```
 If you now head back to your browser and try sending an event. You’ll see that the event is both sent and received.
 The simple fact here is that I’ve cheated by making the application both the *Source* and *Sink* for events.
@@ -106,6 +110,7 @@ You didn’t explicitly define a *Source* and only defined a *Sink* in the *Trig
 Let's have a closer look at our created *Trigger*.
 ```terminal:execute
 command: kn trigger describe cloudevents-player
+clear: true
 ```
 As you can see it sets `cloudevents-player` as its *Sink*. Many things can act as a *Sink* without knowing it and they don't have to be Knative Services as you will see at the end of the chapter.
 Like with the *Knative Serving* Kubernetes records, there are also **Conditions**.
@@ -127,7 +132,11 @@ On the downside, if you see this, something weird is going on. On the upside, Kn
 
 To clean up the environment for the next section run:
 ```terminal:execute
-command: kn broker delete default && kn service delete cloudevents-player && kn trigger delete cloudevents-player && clear
+command: |-
+    kn broker delete default
+    kn service delete cloudevents-player
+    kn trigger delete cloudevents-player
+clear: true
 ```
 
 
