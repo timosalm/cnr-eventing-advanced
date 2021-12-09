@@ -66,7 +66,7 @@ The next step is the creation of the Sequence.
 ```terminal:execute
 command: |-
   kubectl apply -f - << EOF
-  apiVersion: flows.knative.dev/v1beta1
+  apiVersion: flows.knative.dev/v1
   kind: Sequence
   metadata:
     name: example-sequence
@@ -140,7 +140,7 @@ clear: true
 Steps contain destinations. You can either provide a URI, or you can provide some lower-level Kubernetes fields (the Ref) to identify what it is you’re addressing.
 Suppose you have a *Knative Service* called `example-svc-1`, which answers to the URL `https:/ /svc-1.example.com`, plus another `example-svc-2`. Then I can define steps for each using either a URI or a Ref, as this listing shows.
 ```
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
   name: example-with-uri-and-ref
@@ -183,7 +183,7 @@ A channel provides an event delivery mechanism that can fan-out received events,
 ChannelTemplate defines the template which will be used to create Channels between the steps. 
 A ChannelTemplate only requires that two subfields be set: `apiVersion` and `kind`. There is an optional `spec` subfields that can be anything and therefore is not validated by *Knative Eventing*.
 ```
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
   name: example-sequence-in-memory
@@ -200,7 +200,7 @@ In the example, the `kind: InMemoryChannel` means that *Knative Eventing* delega
 Another option is e.g. `KafkaChannel`.
 Unlike `InMemoryChannel`, the `KafkaChannel` does need a spec. 
 ```
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
   name: example-sequence-with-kafka
@@ -229,7 +229,7 @@ You can mix and match *Sequences* with *Broker*/*Trigger* setups in basically an
 *Parallels* resemble *Sequences*, but there are some ergonomic differences. 
 ```
 ---
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
   name: example-sequence
@@ -237,7 +237,7 @@ spec:
   steps:
     - uri: https://step.example.com
 ---
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Parallel
 metadata:
   name: example-parallel
@@ -263,7 +263,7 @@ The simplest thing you can do with a Parallel is to pretend it’s a Sequence.
 ```terminal:execute
 command: |-
   kubectl apply -f - << EOF
-  apiVersion: flows.knative.dev/v1beta1
+  apiVersion: flows.knative.dev/v1
   kind: Parallel
   metadata:
     name: example-parallel
@@ -303,7 +303,7 @@ Let's now add a second subscriber that also replies to the Sockeye application.
 ```terminal:execute
 command: |-
   kubectl apply -f - << EOF
-  apiVersion: flows.knative.dev/v1beta1
+  apiVersion: flows.knative.dev/v1
   kind: Parallel
   metadata:
     name: example-parallel
@@ -356,7 +356,7 @@ That means we can rewrite the YAML to be slightly shorter.
 ```terminal:execute
 command: |-
   kubectl apply -f - << EOF
-  apiVersion: flows.knative.dev/v1beta1
+  apiVersion: flows.knative.dev/v1
   kind: Parallel
   metadata:
     name: example-parallel
@@ -403,7 +403,7 @@ All the delivery configurations are optional.
 
 **Retries** are a simple coping tactic for failed operations. You typically don’t want to do it forever, so a first stop in retry logic is to cap the number of times an operation is retried as this listing indicates.
 ```
-apiVersion: flows.knative.dev/v1beta1
+apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
   name: example-sequence-delivery
