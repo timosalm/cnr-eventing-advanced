@@ -226,7 +226,9 @@ You can mix and match *Sequences* with *Broker*/*Trigger* setups in basically an
 
 ## Parallels
 
-*Parallels* resemble *Sequences*, but there are some ergonomic differences. 
+
+Parallels resemble Sequences, but there are some ergonomic differences. 
+
 ```
 apiVersion: flows.knative.dev/v1
 kind: Sequence
@@ -245,6 +247,7 @@ spec:
     - subscriber:
         uri: https://subscriber.example.com
 ```
+
 In *Sequence*, each entry in the `spec.steps` array is a destination—a URI or Ref, as desired.
 In *Parallel*, the top-level array is `spec.branches`. It’s not an array of destinations. It’s an array of branches.
 Each branch has one required field: a subscriber, which is a destination. Again, you can use a URI or Ref here.
