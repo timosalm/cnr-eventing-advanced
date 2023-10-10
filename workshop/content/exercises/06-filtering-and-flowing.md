@@ -228,7 +228,6 @@ You can mix and match *Sequences* with *Broker*/*Trigger* setups in basically an
 
 *Parallels* resemble *Sequences*, but there are some ergonomic differences. 
 ```
----
 apiVersion: flows.knative.dev/v1
 kind: Sequence
 metadata:
